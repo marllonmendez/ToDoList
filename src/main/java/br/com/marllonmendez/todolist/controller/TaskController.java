@@ -48,16 +48,22 @@ public class TaskController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity update(@RequestBody TaskModel taskModel, @PathVariable UUID id) {
-        Optional<TaskModel> idTask = this.taskRepository.findById(id);
-        if (idTask.isPresent()) {
-            TaskModel task = idTask.get();
-            TaskModel updatedTask = this.taskRepository.save(task);
-            NullProperties.copyNotNullProperties(taskModel, task);
-            return ResponseEntity.status(HttpStatus.OK).body(updatedTask);
-        } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Task inexistente!");
+    public ResponseEntity update(@RequestBody TaskModel taskModel, HttpServletRequest request,@PathVariable UUID id){
+        var task = this.taskRepository.findById(id).orElse(null);
+
+        if(task == null){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Not found task!");
         }
+
+        var idUser = request.getAttribute("idUser");
+
+        if(!task.getIdUser().equals(idUser)){
+            return  ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User don't able to update this task!");
+        }
+        NullProperties.copyNotNullProperties(taskModel, task);
+        var taskUpdated = this.taskRepository.save(task);
+
+        return ResponseEntity.ok().body(taskUpdated);
     }
 }
 
